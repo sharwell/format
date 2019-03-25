@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -10,6 +11,7 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
     public class CodeFormatterTests : IClassFixture<MSBuildFixture>
     {
         private static string SolutionPath => Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.Parent.Parent.FullName;
+        private static ImmutableHashSet<string> EmptyFilesToFormat => ImmutableHashSet.Create<string>();
 
         public CodeFormatterTests(MSBuildFixture msBuildFixture)
         {
@@ -22,8 +24,9 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             var logger = new TestLogger();
             var path = Path.GetFullPath("tests/projects/for_code_formatter/formatted_project/formatted_project.csproj", SolutionPath);
 
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: null, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: EmptyFilesToFormat, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -42,8 +45,9 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             var logger = new TestLogger();
             var path = Path.GetFullPath("tests/projects/for_code_formatter/formatted_solution/formatted_solution.sln", SolutionPath);
 
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: null, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: EmptyFilesToFormat, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -62,8 +66,9 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             var logger = new TestLogger();
             var path = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/unformatted_project.csproj", SolutionPath);
 
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: null, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: EmptyFilesToFormat, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -82,8 +87,9 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             var logger = new TestLogger();
             var path = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_solution/unformatted_solution.sln", SolutionPath);
 
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: null, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: EmptyFilesToFormat, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -102,7 +108,7 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             var logger = new TestLogger();
             var path = Path.GetFullPath("tests/projects/for_code_formatter/fsharp_project/fsharp_project.fsproj", SolutionPath);
 
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: null, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: EmptyFilesToFormat, cancellationToken: CancellationToken.None);
             var logLines = logger.GetLog().Split(Environment.NewLine);
 
             Assert.Equal(4, logLines.Length);
@@ -115,15 +121,17 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
             Assert.Equal(0, formatResult.FileCount);
         }
 
-       [Fact]
+        [Fact]
         public async Task OnlyFormatFilesFromList()
         {
             var logger = new TestLogger();
-            var path = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/unformatted_project.csproj", SolutionPath);
+            var workspacePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/unformatted_project.csproj", SolutionPath);
+            var filePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/program.cs", SolutionPath);
+            var files = ImmutableHashSet.Create<string>(StringComparer.OrdinalIgnoreCase, filePath);
 
-            var files = new[] {"OtherClass.cs"};
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, workspacePath, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -140,11 +148,13 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
         public async Task NoFilesFormattedWhenNotInList()
         {
             var logger = new TestLogger();
-            var path = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/unformatted_project.csproj", SolutionPath);
+            var workspacePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/unformatted_project.csproj", SolutionPath);
+            var filePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/does_not_exist.cs", SolutionPath);
+            var files = ImmutableHashSet.Create<string>(StringComparer.OrdinalIgnoreCase, filePath);
 
-            var files = new[] {"ThisFileDoesNotExist.cs"};
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, workspacePath, isSolution: false, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
+
             var pattern = string.Format(Resources.Formatted_0_of_1_files_in_2_ms, "(\\d+)", "\\d+", "\\d+");
             var filesFormatted = new Regex(pattern, RegexOptions.Multiline);
             var match = filesFormatted.Match(log);
@@ -161,10 +171,11 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
         public async Task OnlyLogFormattedFiles()
         {
             var logger = new TestLogger();
-            var path = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_solution/unformatted_solution.sln", SolutionPath);
+            var workspacePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_solution/unformatted_solution.sln", SolutionPath);
+            var filePath = Path.GetFullPath("tests/projects/for_code_formatter/unformatted_project/program.cs", SolutionPath);
+            var files = ImmutableHashSet.Create<string>(StringComparer.OrdinalIgnoreCase, filePath);
 
-            var files = new[] {"Program.cs"};
-            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, path, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
+            var formatResult = await CodeFormatter.FormatWorkspaceAsync(logger, workspacePath, isSolution: true, logAllWorkspaceWarnings: false, saveFormattedFiles: false, filesToFormat: files, cancellationToken: CancellationToken.None);
             var log = logger.GetLog();
 
             var pattern = string.Format(Resources.Formatted_code_file_0, @"(.*)");

@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="obj\**" />
     <Compile Remove="projects\**" />
+    <EmbeddedResource Remove="obj\**" />
     <EmbeddedResource Remove="projects\**" />
+    <None Remove="obj\**" />
     <None Remove="projects\**" />
   </ItemGroup>
 

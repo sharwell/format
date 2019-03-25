@@ -47,11 +47,11 @@ namespace Microsoft.CodeAnalysis.Tools.Tests
         {
             var filePath = $"other_items{Path.DirectorySeparatorChar}OtherClass.cs";
             var files = Program.GetFileList(filePath);
-            
+
             var filePathAlt = $"other_items{Path.AltDirectorySeparatorChar}OtherClass.cs";
             var filesAlt = Program.GetFileList(filePathAlt);
 
-            Assert.True(files[0] == filesAlt[0]);
+            Assert.True(files.IsSubsetOf(filesAlt));
         }
     }
 }
